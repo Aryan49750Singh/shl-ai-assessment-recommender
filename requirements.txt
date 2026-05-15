@@ -20,5 +20,5 @@ pandas
 python-dotenv
 pydantic
 google-generativeai
-sentence-transformers==2.6.1
-torch==2.2.2
+sentence-transformers
+torch
