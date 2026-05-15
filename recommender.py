@@ -110,83 +110,133 @@
 
 #     return results
 
-import json
-import numpy as np
+# import json
+# import numpy as np
+# import faiss
+# from sentence_transformers import SentenceTransformer
+
+
+# # -----------------------------
+# # LOAD CATALOG
+# # -----------------------------
+
+# with open("catalog.json", "r", encoding="utf-8") as f:
+#     catalog = json.load(f)
+
+# print("Catalog loaded")
+
+
+# # -----------------------------
+# # LOAD MODEL
+# # -----------------------------
+
+# print("Loading embedding model...")
+
+# model = SentenceTransformer(
+#     "sentence-transformers/all-MiniLM-L6-v2"
+# )
+
+# print("Embedding model loaded")
+
+
+# # -----------------------------
+# # PREPARE TEXTS
+# # -----------------------------
+
+# texts = []
+
+# for item in catalog:
+
+#     text = f"""
+#     Name: {item.get('name', '')}
+#     Category: {item.get('category', '')}
+#     Test Type: {item.get('test_type', '')}
+#     Skills: {' '.join(item.get('skills', []))}
+#     """
+
+#     texts.append(text)
+
+
+# # -----------------------------
+# # CREATE EMBEDDINGS
+# # -----------------------------
+
+# print("Creating embeddings...")
+
+# embeddings = model.encode(
+#     texts,
+#     convert_to_numpy=True
+# ).astype("float32")
+
+# print("Embeddings ready")
+
+
+# # -----------------------------
+# # CREATE FAISS INDEX
+# # -----------------------------
+
+# dimension = embeddings.shape[1]
+
+# index = faiss.IndexFlatL2(dimension)
+
+# index.add(embeddings)
+
+# print("FAISS index ready")
+
+
+# # -----------------------------
+# # RECOMMEND FUNCTION
+# # -----------------------------
+
+# def recommend_assessments(query, top_k=5):
+
+#     query_embedding = model.encode(
+#         [query],
+#         convert_to_numpy=True
+#     ).astype("float32")
+
+#     distances, indices = index.search(
+#         query_embedding,
+#         top_k
+#     )
+
+#     results = []
+
+#     for idx in indices[0]:
+
+#         item = catalog[idx]
+
+#         results.append({
+#             "name": item.get("name", ""),
+#             "url": item.get("url", ""),
+#             "category": item.get("category", "General"),
+#             "test_type": item.get("test_type", "Unknown"),
+#             "skills": item.get("skills", [])
+#         })
+
+#     return results
+
+import pickle
 import faiss
 from sentence_transformers import SentenceTransformer
 
+print("Loading FAISS index...")
 
-# -----------------------------
-# LOAD CATALOG
-# -----------------------------
+index = faiss.read_index("index.faiss")
 
-with open("catalog.json", "r", encoding="utf-8") as f:
-    catalog = json.load(f)
+print("Loading metadata...")
 
-print("Catalog loaded")
+with open("metadata.pkl", "rb") as f:
+    catalog = pickle.load(f)
 
-
-# -----------------------------
-# LOAD MODEL
-# -----------------------------
-
-print("Loading embedding model...")
+print("Loading model...")
 
 model = SentenceTransformer(
     "sentence-transformers/all-MiniLM-L6-v2"
 )
 
-print("Embedding model loaded")
+print("System ready")
 
-
-# -----------------------------
-# PREPARE TEXTS
-# -----------------------------
-
-texts = []
-
-for item in catalog:
-
-    text = f"""
-    Name: {item.get('name', '')}
-    Category: {item.get('category', '')}
-    Test Type: {item.get('test_type', '')}
-    Skills: {' '.join(item.get('skills', []))}
-    """
-
-    texts.append(text)
-
-
-# -----------------------------
-# CREATE EMBEDDINGS
-# -----------------------------
-
-print("Creating embeddings...")
-
-embeddings = model.encode(
-    texts,
-    convert_to_numpy=True
-).astype("float32")
-
-print("Embeddings ready")
-
-
-# -----------------------------
-# CREATE FAISS INDEX
-# -----------------------------
-
-dimension = embeddings.shape[1]
-
-index = faiss.IndexFlatL2(dimension)
-
-index.add(embeddings)
-
-print("FAISS index ready")
-
-
-# -----------------------------
-# RECOMMEND FUNCTION
-# -----------------------------
 
 def recommend_assessments(query, top_k=5):
 

@@ -1,13 +1,24 @@
+# fastapi
+# uvicorn
+# # selenium
+# sentence-transformers
+# faiss-cpu
+# numpy
+# pandas
+# google-generativeai
+# python-dotenv
+# pydantic
+# torch
+# transformers
+# sentencepiece
+
 fastapi
 uvicorn
-selenium
-sentence-transformers
 faiss-cpu
 numpy
 pandas
-google-generativeai
 python-dotenv
 pydantic
-torch
-transformers
-sentencepiece
+google-generativeai
+sentence-transformers==2.6.1
+torch==2.2.2
