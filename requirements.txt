@@ -14,11 +14,15 @@
 
 fastapi
 uvicorn
-faiss-cpu
 numpy
 pandas
 python-dotenv
 pydantic
 google-generativeai
-sentence-transformers
-torch
+scikit-learn
+requests
+beautifulsoup4
+
+# torch
+# sentence-transformers
+# faiss-cpu

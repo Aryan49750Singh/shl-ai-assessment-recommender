@@ -21,6 +21,63 @@ class ChatRequest(BaseModel):
 
 
 # -----------------------------
+# BLOCKED TOPICS
+# -----------------------------
+
+BLOCKED_KEYWORDS = [
+    "salary",
+    "legal",
+    "politics",
+    "ignore previous instructions",
+    "bypass",
+    "hack"
+]
+
+
+# -----------------------------
+# HELPERS
+# -----------------------------
+
+def extract_full_conversation(messages):
+
+    combined = ""
+
+    for msg in messages:
+        combined += f"{msg.role}: {msg.content}\n"
+
+    return combined.lower()
+
+
+def should_refuse(text):
+
+    for keyword in BLOCKED_KEYWORDS:
+
+        if keyword in text:
+            return True
+
+    return False
+
+
+def needs_clarification(text):
+
+    vague_phrases = [
+        "need assessment",
+        "need an assessment",
+        "hiring",
+        "need test",
+        "need tests"
+    ]
+
+    short_query = len(text.split()) < 4
+
+    vague_match = any(
+        phrase in text for phrase in vague_phrases
+    )
+
+    return vague_match or short_query
+
+
+# -----------------------------
 # HEALTH ENDPOINT
 # -----------------------------
 
@@ -28,8 +85,7 @@ class ChatRequest(BaseModel):
 def health():
 
     return {
-        "status": "ok",
-        "assessments_loaded": len(catalog)
+        "status": "ok"
     }
 
 
@@ -42,23 +98,66 @@ def chat(request: ChatRequest):
 
     try:
 
-        # Get latest user message
-        query = request.messages[-1].content
+        conversation = extract_full_conversation(
+            request.messages
+        )
 
-        # Get recommendations
-        recommendations = recommend_assessments(query)
+        latest_user_message = request.messages[-1].content
+
+        # -----------------------------
+        # REFUSAL
+        # -----------------------------
+
+        if should_refuse(conversation):
+
+            return {
+                "reply": (
+                    "I can only help with "
+                    "SHL assessment recommendations."
+                ),
+                "recommendations": [],
+                "end_of_conversation": False
+            }
+
+        # -----------------------------
+        # CLARIFICATION
+        # -----------------------------
+
+        if needs_clarification(conversation):
+
+            return {
+                "reply": (
+                    "Could you share more details "
+                    "about the role, skills, seniority, "
+                    "or assessment requirements?"
+                ),
+                "recommendations": [],
+                "end_of_conversation": False
+            }
+
+        # -----------------------------
+        # RECOMMENDATIONS
+        # -----------------------------
+
+        recommendations = recommend_assessments(
+            conversation,
+            top_k=5
+        )
 
         return {
-            "query": query,
-            "reply": "I found relevant SHL assessments for your query.",
-            "total_results": len(recommendations),
+            "reply": (
+                "Here are recommended SHL assessments "
+                "based on your requirements."
+            ),
             "recommendations": recommendations,
-            "end_of_conversation": False
+            "end_of_conversation": True
         }
 
     except Exception as e:
 
         return {
             "reply": "Something went wrong",
+            "recommendations": [],
+            "end_of_conversation": False,
             "error": str(e)
         }

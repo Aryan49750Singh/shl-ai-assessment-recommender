@@ -1,7 +1,17 @@
+# services:
+#   - type: web
+#     name: shl-ai-agent
+#     env: python
+#     plan: free
+#     buildCommand: pip install -r requirements.txt
+#     startCommand: uvicorn app:app --host 0.0.0.0 --port 10000
+
 services:
   - type: web
     name: shl-ai-agent
     env: python
     plan: free
+
     buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn app:app --host 0.0.0.0 --port 10000
+
+    startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT

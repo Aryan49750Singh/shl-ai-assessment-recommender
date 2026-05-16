@@ -216,49 +216,91 @@
 
 #     return results
 
-import pickle
-import faiss
-from sentence_transformers import SentenceTransformer
+import json
 
-print("Loading FAISS index...")
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 
-index = faiss.read_index("index.faiss")
 
-print("Loading metadata...")
+# -----------------------------
+# LOAD CATALOG
+# -----------------------------
 
-with open("metadata.pkl", "rb") as f:
-    catalog = pickle.load(f)
+with open("catalog.json", "r", encoding="utf-8") as f:
+    catalog = json.load(f)
 
-print("Loading model...")
+print(f"Loaded {len(catalog)} assessments")
 
-model = SentenceTransformer(
-    "sentence-transformers/all-MiniLM-L6-v2"
+
+# -----------------------------
+# PREPARE SEARCH TEXTS
+# -----------------------------
+
+texts = []
+
+for item in catalog:
+
+    combined_text = f"""
+    {item.get('name', '')}
+    {item.get('description', '')}
+    {' '.join(item.get('skills', []))}
+    {item.get('category', '')}
+    {item.get('test_type', '')}
+    """
+
+    texts.append(combined_text)
+
+
+# -----------------------------
+# CREATE TF-IDF VECTORS
+# -----------------------------
+
+vectorizer = TfidfVectorizer(
+    stop_words="english",
+    max_features=5000
 )
 
-print("System ready")
+text_vectors = vectorizer.fit_transform(texts)
 
+print("Retriever ready")
+
+
+# -----------------------------
+# RECOMMEND FUNCTION
+# -----------------------------
 
 def recommend_assessments(query, top_k=5):
 
-    query_embedding = model.encode(
-        [query],
-        convert_to_numpy=True
-    ).astype("float32")
+    query_vector = vectorizer.transform([query])
 
-    distances, indices = index.search(
-        query_embedding,
-        top_k
+    similarities = cosine_similarity(
+        query_vector,
+        text_vectors
     )
+
+    scores = similarities[0]
+
+    ranked_indices = scores.argsort()[::-1][:top_k]
 
     results = []
 
-    for idx in indices[0]:
+    seen_urls = set()
+
+    for idx in ranked_indices:
 
         item = catalog[idx]
 
+        url = item.get("url", "")
+
+        # Avoid duplicates
+        if url in seen_urls:
+            continue
+
+        seen_urls.add(url)
+
         results.append({
             "name": item.get("name", ""),
-            "url": item.get("url", ""),
+            "url": url,
             "category": item.get("category", "General"),
             "test_type": item.get("test_type", "Unknown"),
             "skills": item.get("skills", [])
