@@ -43,13 +43,17 @@ Response:
 {
   "status": "ok"
 }
+```
 
-Chat Recommendation Endpoint
+---
 
-POST /chat
+### Chat Recommendation Endpoint
+
+POST `/chat`
 
 Example Request:
 
+```json
 {
   "messages": [
     {
@@ -58,9 +62,11 @@ Example Request:
     }
   ]
 }
+```
 
 Example Response:
 
+```json
 {
   "reply": "Here are recommended SHL assessments based on your requirements.",
   "recommendations": [
@@ -76,7 +82,13 @@ Example Response:
   ],
   "end_of_conversation": true
 }
-Project Structure
+```
+
+---
+
+## Project Structure
+
+```bash
 SHL-AI-AGENT/
 │
 ├── app.py
@@ -90,39 +102,66 @@ SHL-AI-AGENT/
 ├── README.md
 ├── .env.example
 └── .gitignore
-Deployment
+```
+
+---
+
+## Deployment
 
 Deployed on Render.
 
-Live API: https://shl-ai-assessment-recommender-6-ojie.onrender.com
+Live API:
 
-Swagger Docs:  https://shl-ai-assessment-recommender-6-ojie.onrender.com/docs
+https://shl-ai-assessment-recommender-6-ojie.onrender.com
 
-Installation
+Swagger Docs:
+
+https://shl-ai-assessment-recommender-6-ojie.onrender.com/docs
+
+---
+
+## Installation
 
 Clone the repository:
 
-git clone YOUR_GITHUB_REPO_LINK
+```bash
+git clone https://github.com/Aryan49750Singh/shl-ai-assessment-recommender
+```
 
 Install dependencies:
 
+```bash
 pip install -r requirements.txt
+```
 
 Run locally:
 
+```bash
 uvicorn app:app --reload
-Dataset
+```
+
+---
+
+## Dataset
 
 The assessment catalog was scraped from SHL Product Catalog using Selenium automation.
 
 Total assessments scraped: 389
 
-Future Improvements
+---
 
-Hybrid semantic search
-Better ranking logic
-LLM-enhanced explanations
-Skill extraction pipeline
-Conversation memory
-Frontend UI integration
+## Future Improvements
+
+- Hybrid semantic search
+- Better ranking logic
+- LLM-enhanced explanations
+- Skill extraction pipeline
+- Conversation memory
+- Frontend UI integration
+
+---
+
+## Author
+
+Aryan
 
