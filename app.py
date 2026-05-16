@@ -2,9 +2,13 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import List
 
-from recommender import recommend_assessments, catalog
+from recommender import recommend_assessments
+from llm_engine import generate_reply
 
-app = FastAPI()
+app = FastAPI(
+    title="SHL AI Assessment Recommendation Agent",
+    version="1.0.0"
+)
 
 
 # -----------------------------
@@ -24,14 +28,14 @@ class ChatRequest(BaseModel):
 # BLOCKED TOPICS
 # -----------------------------
 
-BLOCKED_KEYWORDS = [
+BLOCKED_KEYWORDS = {
     "salary",
     "legal",
     "politics",
     "ignore previous instructions",
     "bypass",
     "hack"
-]
+}
 
 
 # -----------------------------
@@ -40,38 +44,32 @@ BLOCKED_KEYWORDS = [
 
 def extract_full_conversation(messages):
 
-    combined = ""
-
-    for msg in messages:
-        combined += f"{msg.role}: {msg.content}\n"
-
-    return combined.lower()
+    return "\n".join(
+        f"{msg.role}: {msg.content}"
+        for msg in messages
+    ).lower()
 
 
 def should_refuse(text):
 
-    for keyword in BLOCKED_KEYWORDS:
-
-        if keyword in text:
-            return True
-
-    return False
+    return any(
+        keyword in text
+        for keyword in BLOCKED_KEYWORDS
+    )
 
 
 def needs_clarification(text):
 
     text = text.lower()
 
-    vague_phrases = [
+    vague_phrases = {
         "need assessment",
         "need an assessment",
         "need test",
         "need tests"
-    ]
+    }
 
-    # If clearly contains role/skills info,
-    # do NOT clarify further
-    strong_signals = [
+    strong_signals = {
         "developer",
         "engineer",
         "java",
@@ -80,23 +78,43 @@ def needs_clarification(text):
         "manager",
         "communication",
         "stakeholder",
-        "analyst"
-    ]
+        "analyst",
+        "backend",
+        "frontend",
+        "cloud",
+        "sql",
+        "react",
+        "node"
+    }
 
     has_strong_signal = any(
-        signal in text for signal in strong_signals
+        signal in text
+        for signal in strong_signals
     )
 
     if has_strong_signal:
         return False
 
     vague_match = any(
-        phrase in text for phrase in vague_phrases
+        phrase in text
+        for phrase in vague_phrases
     )
 
     short_query = len(text.split()) < 3
 
     return vague_match or short_query
+
+
+# -----------------------------
+# ROOT ENDPOINT
+# -----------------------------
+
+@app.get("/")
+def root():
+
+    return {
+        "message": "SHL AI Agent Running"
+    }
 
 
 # -----------------------------
@@ -120,11 +138,17 @@ def chat(request: ChatRequest):
 
     try:
 
+        if not request.messages:
+
+            return {
+                "reply": "No messages provided.",
+                "recommendations": [],
+                "end_of_conversation": False
+            }
+
         conversation = extract_full_conversation(
             request.messages
         )
-
-        latest_user_message = request.messages[-1].content
 
         # -----------------------------
         # REFUSAL
@@ -149,9 +173,9 @@ def chat(request: ChatRequest):
 
             return {
                 "reply": (
-                    "Could you share more details "
-                    "about the role, skills, seniority, "
-                    "or assessment requirements?"
+                    "Please share more details "
+                    "about the role, required skills, "
+                    "experience level, or assessment needs."
                 ),
                 "recommendations": [],
                 "end_of_conversation": False
@@ -166,20 +190,23 @@ def chat(request: ChatRequest):
             top_k=5
         )
 
+        reply = generate_reply(
+            conversation,
+            len(recommendations)
+        )
+
         return {
-            "reply": (
-                "Here are recommended SHL assessments "
-                "based on your requirements."
-            ),
+            "reply": reply,
             "recommendations": recommendations,
             "end_of_conversation": True
         }
 
     except Exception as e:
 
+        print("CHAT ERROR:", str(e))
+
         return {
-            "reply": "Something went wrong",
+            "reply": "Internal server error.",
             "recommendations": [],
-            "end_of_conversation": False,
-            "error": str(e)
+            "end_of_conversation": False
         }

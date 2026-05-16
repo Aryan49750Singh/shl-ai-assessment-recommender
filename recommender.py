@@ -219,7 +219,7 @@
 import json
 
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.metrics.pairwise import linear_kernel
 
 
 # -----------------------------
@@ -240,15 +240,15 @@ texts = []
 
 for item in catalog:
 
-    combined_text = f"""
-    {item.get('name', '')}
-    {item.get('description', '')}
-    {' '.join(item.get('skills', []))}
-    {item.get('category', '')}
-    {item.get('test_type', '')}
-    """
+    combined_text = " ".join([
+        item.get("name", ""),
+        item.get("description", ""),
+        " ".join(item.get("skills", [])),
+        item.get("category", ""),
+        item.get("test_type", "")
+    ])
 
-    texts.append(combined_text)
+    texts.append(combined_text.lower())
 
 
 # -----------------------------
@@ -257,7 +257,8 @@ for item in catalog:
 
 vectorizer = TfidfVectorizer(
     stop_words="english",
-    max_features=5000
+    max_features=3000,
+    ngram_range=(1, 2)
 )
 
 text_vectors = vectorizer.fit_transform(texts)
@@ -271,28 +272,35 @@ print("Retriever ready")
 
 def recommend_assessments(query, top_k=5):
 
+    query = query.lower().strip()
+
+    if not query:
+        return []
+
     query_vector = vectorizer.transform([query])
 
-    similarities = cosine_similarity(
+    similarities = linear_kernel(
         query_vector,
         text_vectors
-    )
+    ).flatten()
 
-    scores = similarities[0]
-
-    ranked_indices = scores.argsort()[::-1][:top_k]
+    ranked_indices = similarities.argsort()[::-1]
 
     results = []
-
     seen_urls = set()
 
     for idx in ranked_indices:
+
+        score = similarities[idx]
+
+        # Ignore weak matches
+        if score < 0.05:
+            continue
 
         item = catalog[idx]
 
         url = item.get("url", "")
 
-        # Avoid duplicates
         if url in seen_urls:
             continue
 
@@ -301,9 +309,21 @@ def recommend_assessments(query, top_k=5):
         results.append({
             "name": item.get("name", ""),
             "url": url,
-            "category": item.get("category", "General"),
-            "test_type": item.get("test_type", "Unknown"),
-            "skills": item.get("skills", [])
+            "category": item.get(
+                "category",
+                "General"
+            ),
+            "test_type": item.get(
+                "test_type",
+                "Unknown"
+            ),
+            "skills": item.get(
+                "skills",
+                []
+            )
         })
+
+        if len(results) >= top_k:
+            break
 
     return results
