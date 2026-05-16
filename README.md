@@ -1,4 +1,4 @@
-# SHL AI Assessment Recommendation Agent
+# Conversational SHL Assessment Recommender
 
 AI-powered recommendation system that suggests relevant SHL assessments based on hiring requirements or user queries.
 
