@@ -60,19 +60,41 @@ def should_refuse(text):
 
 def needs_clarification(text):
 
+    text = text.lower()
+
     vague_phrases = [
         "need assessment",
         "need an assessment",
-        "hiring",
         "need test",
         "need tests"
     ]
 
-    short_query = len(text.split()) < 4
+    # If clearly contains role/skills info,
+    # do NOT clarify further
+    strong_signals = [
+        "developer",
+        "engineer",
+        "java",
+        "python",
+        "sales",
+        "manager",
+        "communication",
+        "stakeholder",
+        "analyst"
+    ]
+
+    has_strong_signal = any(
+        signal in text for signal in strong_signals
+    )
+
+    if has_strong_signal:
+        return False
 
     vague_match = any(
         phrase in text for phrase in vague_phrases
     )
+
+    short_query = len(text.split()) < 3
 
     return vague_match or short_query
 
