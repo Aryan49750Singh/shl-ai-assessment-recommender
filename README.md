@@ -125,7 +125,7 @@ https://shl-ai-assessment-recommender-6-ojie.onrender.com/docs
 Clone the repository:
 
 ```bash
-git clone https://github.com/Aryan49750Singh/shl-ai-assessment-recommender
+https://github.com/Aryan49750Singh/shl-ai-assessment-recommender
 ```
 
 Install dependencies:
